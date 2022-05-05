@@ -127,7 +127,7 @@ setMethod("findpaths.simpleRJava",
                                   'FlowNetwork_all_paths_subnet.gml',
                                   format = 'gml');
             } else {
-              cat('No cells in the path', dir,'. The gaph was not created.\n')
+              cat('No cells in the path', dir,'. The graph was not created.\n')
             }
 
             # Change directory back to the original one.
