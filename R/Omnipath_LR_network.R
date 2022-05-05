@@ -14,35 +14,8 @@
 #' (character vector) with the genes not used in the interactions.
 #'
 #' @export
-createPPI <- function(expr, species){
-  a <- expr
-  if (species = "Hs") {
-    organism <- 9606
-  }
-  else if (species = "Mm") {
-    organism <- 10090
-  }
-  else if (species = "Rn") {
-    organism <- 10116
-  }
-  data <- as.data.frame(import_omnipath_interactions(datasets = 'omnipath', entity_types = 'protein', organism = organism))
-  cat(dim(ppi))
-  cat('\nProtein interaction data loaded!')
-  # The columns names are usually fixed.
-  ppi <- data[, c('source_genesymbol','target_genesymbol', 'curation_effort')] #geneA and geneB, score
-  idmap <- data.frame(idA=ppi$source_genesymbol, idB=ppi$target_genesymbol, score=as.numeric(ppi$curation_effort))
-  allgenes <- unique(c(as.vector(idmap$idA), as.vector(idmap$idB)))
-  inetwork <- igraph::graph.data.frame(idmap, directed=FALSE);
-  inetwork <- igraph::simplify(inetwork, remove.multiple = TRUE,
-                               remove.loops = TRUE)
-  genesPPI <- intersect(rownames(expr), allgenes)
-  remove <- setdiff(igraph::V(inetwork)$name, rownames(expr))
-  inetwork <- igraph::delete.vertices(inetwork, remove)
-  ctable <- as.data.frame(igraph::get.edgelist(inetwork))
-  colnames(ctable) <- c('from', 'to')
-  names <- paste(as.vector(ctable$from), as.vector(ctable$to), sep="_")
-  rownames(ctable) <- names
-  network <- list(network=inetwork, ctable=ctable, table=idmap, genes=allgenes,
-                  genesPPI=genesPPI, removed=remove)
-  return(network)
+Omnipath_LR_network <- function(species){
+  pairs <- nichenet_lr_network(only_omnipath = TRUE)
+  pairs$Pair.Name <- paste(pairs$from, pairs$to, sep = "_")
+  return(pairs)
 }
