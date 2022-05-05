@@ -15,32 +15,48 @@
 #' and receptor.
 #'
 #' @export
-population.pairing <- function(mean.expr, ligands, receptors, threshold, pairs){
-  interactions <- list()
-  for(ct1 in names(mean.expr)){
-    for(ct2 in names(mean.expr)){
-      ct1.expressed <- mean.expr[[ct1]][c(ligands, receptors),]
-      ct1.expressed <- ct1.expressed[which(ct1.expressed$p > threshold),]
+pathfinding <- function(cellrouter, assay.type='ST', grn, gene.pairs_01, gene.pairs_02, markers, maindir=NULL, verbose=TRUE){
+  tfs <- intersect(grn.data$tfs, rownames(slot(object, 'assays')[[assay.type]]@ndata))
+  x <- rbind(gene.pairs_01$markers, gene.pairs_02$markers)
 
-      ct2.expressed <- mean.expr[[ct2]][c(ligands, receptors),]
-      ct2.expressed <- ct2.expressed[which(ct2.expressed$p > threshold),]
-
-      combs <- expand.grid(rownames(ct1.expressed), rownames(ct2.expressed))
-      combs <- paste(combs$Var1, combs$Var2, sep='_')
-      combs <- intersect(combs, pairs$Pair.Name)
-      if(length(combs) > 0){
-        ligs <- sapply(strsplit(combs, split='_', fixed=TRUE), function(x) (x[1]))
-        recs <- sapply(strsplit(combs, split='_', fixed=TRUE), function(x) (x[2]))
-        df <- data.frame(celltype1=rep(ct1, times=length(combs)),
-                         celltype2=rep(ct2, times=length(combs)),
-                         pair=combs, ligand=ligs, receptor=recs,
-                         stringsAsFactors = FALSE)
-        interactions[[paste(ct1,ct2,sep='_')]] <- df
-      }
-
-    }
+  sts2 <- list()
+  for(i in unique(x$celltypes)){
+    tmp <- x[which(x$celltypes == i),]
+    rs <- unique(tmp$receptor)
+    sts2[["receptor"]][[i]]$sources <- rs  # receptors
+    sts2[["receptor"]][[i]]$targets <- tfs # TFs (all)
   }
-  interactions <- dplyr::bind_rows(interactions)#rbind.fill(interactions)
+  if (maindir == NULL) {
+    wd_package <- getwd()
+    setwd(wd_package)
+    maindir <- paste0(wd_package, '')
+  }
+  
+  interactionList <- expand.grid(x$celltypes)
 
-  return(interactions)
+  cellcomm <- CreateCellComm()
+  for(interaction in interactionList){
+    interaction <- gsub(" ", ".", interaction)
+    print(interaction)
+    celltype <- strsplit(interaction, split = "[_]")[[1]][2]
+  
+    cat("Using ", celltype, " coexpression network\n")
+    filename <- paste(celltype, ".txt", sep='')
+    dirname <- gsub(("[.]"), ".", interaction)
+    cellcomm <- findpaths.simpleRJava(cellcomm, sources.targets = sts2$receptor[[interaction]], file = filename, dir = dirname, maindir = maindir)
+  }
+
+  files <- list()
+  for(i in interactionList){
+    f <- paste(strsplit(i, split = "_")[[1]][2], ".txt", sep = "")
+    files[[i]] <- f
+  }
+
+  summary <- summarize.flow(files, prefix = "")
+  colnames(grn_table) <- c("target", "reg", "zscore", "corr")
+  sampTab <- slot(object, 'assays')[[assay.type]]@sampTab
+  apathways <- activeSignaling(data = slot(object, 'assays')[[assay.type]]@ndata, sampTab = slot(object, 'assays')[[assay.type]]@sampTab,
+                             grn = grn$GRN_table, markers = markers, summary = summary, fc = 0.2)
+  npaths <- rankpaths(summary, apathways$pathways)
+  return(npaths)
 }
