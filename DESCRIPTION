@@ -50,7 +50,8 @@ Imports:
     gridExtra,
     Rcpp,
     RcppEigen,
-    sparseMatrixStats
+    sparseMatrixStats,
+    OmnipathR
 SystemRequirements: Java JDK Oracle 1.8
 RoxygenNote: 7.1.2
 Collate: 
