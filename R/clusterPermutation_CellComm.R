@@ -17,16 +17,18 @@
 #'
 #' @export
 clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
-                               nPerm, interactions, cluster.label){
+                               nPerm, interactions, cluster.label, verbose=TRUE){
   pcellrouter <- cellrouter
   mean.pairs <- list()
   for(j in 1:nPerm){
-    cat(j, '______________________________\n')
+    if(verbose == TRUE){
+      cat(j, '______________________________\n')
+    }
     pclusters <- as.vector(slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[cluster.label]])
     pclusters <- pclusters[sample(length(pclusters))]
     slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[cluster.label]] <- pclusters
     mean.expr <- computeValue(pcellrouter, assay.type, genelist, cluster.label,
-                              fun='mean')
+                              fun='mean', verbose)
     # interactions <- population.pairing(mean.expr = mean.expr, ligands=ligands,
     #                                    receptors=receptors, threshold = 0.25, pairs.m)
     interactions2 <- interactions
@@ -76,7 +78,7 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
 clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
                                          nPerm, interactions, cluster.label,
                                          subcluster.column='Subpopulation',
-                                         clusters){
+                                         clusters, verbose=TRUE){
   pcellrouter <- cellrouter
   sampTab <- slot(pcellrouter, 'assays')[[assay.type]]@sampTab[
     slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[cluster.label]] %in% clusters, ]
@@ -85,7 +87,9 @@ clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
   slot(pcellrouter, 'assays')[[assay.type]]@ndata <- expDat
   mean.pairs <- list()
   for(j in 1:nPerm){
-    cat(j, '______________________________\n')
+    if(verbose == TRUE){
+      cat(j, '______________________________\n')
+    }
     pclusters <- as.vector(slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[subcluster.column]])
     pclusters <- pclusters[sample(length(pclusters))]
     slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[subcluster.column]] <- pclusters
@@ -94,7 +98,7 @@ clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
                                          genelist = genelist,
                                          column = cluster.label,
                                          subcluster.column = subcluster.column,
-                                         clusters = clusters, fun='mean')
+                                         clusters = clusters, fun='mean', verbose)
     # interactions <- population.pairing(mean.expr = mean.expr, ligands=ligands,
     #                                    receptors=receptors, threshold = 0.25, pairs.m)
     interactions2 <- interactions
