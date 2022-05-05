@@ -17,20 +17,24 @@
 #' @docType methods
 #' @rdname computeValue-methods
 setGeneric("computeValue", function(object, assay.type='RNA',
-                                    genelist, column='population', fun='max')
+                                    genelist, column='population', fun='max', verbose = TRUE)
   standardGeneric("computeValue"))
 #' @rdname computeValue-methods
 #' @aliases computeValue
 setMethod("computeValue",
           signature = "CellRouter",
-          definition = function(object, assay.type, genelist, column, fun){
-            print('discovering subpopulation-specific gene signatures')
+          definition = function(object, assay.type, genelist, column, fun, verbose){
+            if(verbose == TRUE){
+              print('discovering subpopulation-specific gene signatures')
+            }
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist,]
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
             diffs <- list()
             for(i in unique(membs)){
-              cat('cluster ', i, '\n')
+              if(verbose == TRUE){
+                cat('cluster ', i, '\n')
+              }
               if(sum(membs == i) == 0) next
               m_indexes <- membs_df[which(membs_df[[column]] != i), 'sample_id']
               n_indexes <- membs_df[which(membs_df[[column]] == i), 'sample_id']
@@ -85,15 +89,18 @@ setGeneric("computeValueSubclusters", function(object, assay.type='RNA',
                                                column='population',
                                                subcluster.column='Subpopulation',
                                                clusters,
-                                               fun='max')
+                                               fun='max',
+                                               verbose = TRUE)
   standardGeneric("computeValueSubclusters"))
 #' @rdname computeValueSubclusters-methods
 #' @aliases computeValueSubclusters
 setMethod("computeValueSubclusters",
           signature = "CellRouter",
           definition = function(object, assay.type, genelist, column,
-                                subcluster.column, clusters, fun){
-            print('discovering subpopulation-specific gene signatures')
+                                subcluster.column, clusters, fun, verbose){
+            if(verbose == TRUE){
+              print('discovering subpopulation-specific gene signatures')
+            }
             sampTab <- slot(object, 'assays')[[assay.type]]@sampTab[
               slot(object, 'assays')[[assay.type]]@sampTab[[column]] %in% clusters,]
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist, rownames(sampTab)]
@@ -101,7 +108,9 @@ setMethod("computeValueSubclusters",
             membs <- as.vector(sampTab[[subcluster.column]])
             diffs <- list()
             for(i in unique(membs)){
-              cat('cluster ', i, '\n')
+              if(verbose == TRUE){
+                cat('cluster ', i, '\n')
+              }
               if(sum(membs == i) == 0) next
               if(fun == 'max'){
                 m <- if(sum(membs != i) > 1) apply(expDat[, membs != i], 1, max) else expDat[, membs != i]
