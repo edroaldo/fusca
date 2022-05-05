@@ -27,6 +27,10 @@ setMethod("computeValue",
             if(verbose == TRUE){
               print('discovering subpopulation-specific gene signatures')
             }
+            genelist <- unique(intersect(genelist, rownames(slot(object, 'assays')[[assay.type]]@ndata)))
+            if (length(genelist) == 0) {
+              stop("Error no matching between the genelist and the assay")
+            }
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist,]
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
