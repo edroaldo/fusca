@@ -11,6 +11,7 @@
 #' population.pairing function or the calculateObservedMean function.
 #' @param cluster.label character; column in the metadata table
 #' (CellRouter@@sampTab) corresponding to the population.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the interaction data frame for each permutation, including the
 #' columns of mean expression of ligands, receptors and pairs.
@@ -70,6 +71,7 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
 #' @param subcluster.column character; the name of the column where the
 #' subclustering information will be stored.
 #' @param clusters character; selected clusters.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the interaction data frame for each permutation, including the
 #' columns of mean expression of ligands, receptors and pairs.
