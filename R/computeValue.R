@@ -9,6 +9,7 @@
 #' differential expression. For example, if 'population' is specified,
 #' population-specific gene signatures will be identified.
 #' @param fun character; statistical function to summary the gene expression.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the statistics of the expressed genes in the population (p
 #' column), not in the population (np), and the percentage (percent).
@@ -81,6 +82,7 @@ detectGenes <- function(expr, min_expr = 0.1){
 #' subclustering information will be stored.
 #' @param clusters character; selected clusters.
 #' @param fun character; statistical function to summary the gene expression.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the statistics of the expressed genes in the population (p
 #' column), not in the population (np), and the percentage (percent).
