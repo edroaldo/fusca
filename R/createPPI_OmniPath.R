@@ -1,11 +1,12 @@
 #' Create protein-protein interactions.
 #'
 #' Create a protein-protein interaction network for the reconstruction of cell
-#' signaling pathways.
+#' signaling pathways from OmniPath.
 #'
-#' @param filename character; protein interaction data.
 #' @param expr dgCMatrix; gene expression in each cell, found in
 #' CellRouter@@ndata.
+#' @param species character; defining the species: Hs for Homo Sapiens, Mm for Mus Musculus or Rn for Rattus norvegicus.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the network (igraph object), the ctable (data frame) with the
 #' edge list, the table (data frame) with the information of the ids of gene A
@@ -14,7 +15,7 @@
 #' (character vector) with the genes not used in the interactions.
 #'
 #' @export
-createPPI <- function(expr, species){
+createPPIOmniPath <- function(expr, species = "Hs", verbose = TRUE){
   a <- expr
   if (species = "Hs") {
     organism <- 9606
@@ -26,8 +27,10 @@ createPPI <- function(expr, species){
     organism <- 10116
   }
   data <- as.data.frame(import_omnipath_interactions(datasets = 'omnipath', entity_types = 'protein', organism = organism))
-  cat(dim(ppi))
-  cat('\nProtein interaction data loaded!')
+  if(verbose == TRUE){
+    cat(dim(ppi))
+    cat('\nProtein interaction data loaded!')
+  }
   # The columns names are usually fixed.
   ppi <- data[, c('source_genesymbol','target_genesymbol', 'curation_effort')] #geneA and geneB, score
   idmap <- data.frame(idA=ppi$source_genesymbol, idB=ppi$target_genesymbol, score=as.numeric(ppi$curation_effort))
