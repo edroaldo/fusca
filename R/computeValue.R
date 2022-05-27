@@ -27,7 +27,7 @@ setMethod("computeValue",
             print('discovering subpopulation-specific gene signatures')
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist,]
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
-            membs_df <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
+            membs_df <- as.data.frame(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
             diffs <- list()
             for(i in unique(membs)){
               cat('cluster ', i, '\n')
