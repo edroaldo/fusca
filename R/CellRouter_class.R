@@ -118,6 +118,8 @@ CreateCellRouter <- function(rawdata, assay.type='RNA', min.genes, min.cells,
 # Only works for RNA.
 # Mudar para os diferentes tipos, acredito que só funcione pra o RNA agora.
 CreateAssay <- function(rawdata, assay.type, min.genes, min.cells, is.expr){
+  rownames(rawdata) <- make.unique(rownames(rawdata), sep = ".") #!
+  colnames(rawdata) <- gsub('-','.',colnames(rawdata)) #!
   num.genes <- Matrix::colSums(rawdata > is.expr)
   num.mol <- Matrix::colSums(rawdata)
   cells.use <- names(num.genes[which(num.genes > min.genes)])
