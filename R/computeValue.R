@@ -9,6 +9,7 @@
 #' differential expression. For example, if 'population' is specified,
 #' population-specific gene signatures will be identified.
 #' @param fun character; statistical function to summary the gene expression.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the statistics of the expressed genes in the population (p
 #' column), not in the population (np), and the percentage (percent).
@@ -17,20 +18,28 @@
 #' @docType methods
 #' @rdname computeValue-methods
 setGeneric("computeValue", function(object, assay.type='RNA',
-                                    genelist, column='population', fun='max')
+                                    genelist, column='population', fun='max', verbose = TRUE)
   standardGeneric("computeValue"))
 #' @rdname computeValue-methods
 #' @aliases computeValue
 setMethod("computeValue",
           signature = "CellRouter",
-          definition = function(object, assay.type, genelist, column, fun){
-            print('discovering subpopulation-specific gene signatures')
+          definition = function(object, assay.type, genelist, column, fun, verbose){
+            if(verbose == TRUE){
+              print('discovering subpopulation-specific gene signatures')
+            }
+            genelist <- unique(intersect(genelist, rownames(slot(object, 'assays')[[assay.type]]@ndata)))
+            if (length(genelist) == 0) {
+              stop("Error no matching between the genelist and the assay")
+            }
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist,]
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.data.frame(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
             diffs <- list()
             for(i in unique(membs)){
-              cat('cluster ', i, '\n')
+              if(verbose == TRUE){
+                cat('cluster ', i, '\n')
+              }
               if(sum(membs == i) == 0) next
               m_indexes <- membs_df[which(membs_df[[column]] != i), 'sample_id']
               n_indexes <- membs_df[which(membs_df[[column]] == i), 'sample_id']
@@ -73,6 +82,7 @@ detectGenes <- function(expr, min_expr = 0.1){
 #' subclustering information will be stored.
 #' @param clusters character; selected clusters.
 #' @param fun character; statistical function to summary the gene expression.
+#' @param verbose boolean; verbosity of the function.
 #'
 #' @return list; the statistics of the expressed genes in the population (p
 #' column), not in the population (np), and the percentage (percent).
@@ -85,15 +95,18 @@ setGeneric("computeValueSubclusters", function(object, assay.type='RNA',
                                                column='population',
                                                subcluster.column='Subpopulation',
                                                clusters,
-                                               fun='max')
+                                               fun='max',
+                                               verbose = TRUE)
   standardGeneric("computeValueSubclusters"))
 #' @rdname computeValueSubclusters-methods
 #' @aliases computeValueSubclusters
 setMethod("computeValueSubclusters",
           signature = "CellRouter",
           definition = function(object, assay.type, genelist, column,
-                                subcluster.column, clusters, fun){
-            print('discovering subpopulation-specific gene signatures')
+                                subcluster.column, clusters, fun, verbose){
+            if(verbose == TRUE){
+              print('discovering subpopulation-specific gene signatures')
+            }
             sampTab <- slot(object, 'assays')[[assay.type]]@sampTab[
               slot(object, 'assays')[[assay.type]]@sampTab[[column]] %in% clusters,]
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist, rownames(sampTab)]
@@ -101,7 +114,9 @@ setMethod("computeValueSubclusters",
             membs <- as.vector(sampTab[[subcluster.column]])
             diffs <- list()
             for(i in unique(membs)){
-              cat('cluster ', i, '\n')
+              if(verbose == TRUE){
+                cat('cluster ', i, '\n')
+              }
               if(sum(membs == i) == 0) next
               if(fun == 'max'){
                 m <- if(sum(membs != i) > 1) apply(expDat[, membs != i], 1, max) else expDat[, membs != i]

@@ -116,32 +116,32 @@ cellnetworksPPI2 <- function(ppi, expr, samples, corThr1, corThr2, column,
                                                  weighted = 'correlation')
     cor.m <- igraph::as_data_frame(cor_g, 'edges')
     rownames(cor.m) <- paste(as.vector(cor.m$from), as.vector(cor.m$to), sep='_')
-    #cor_g <- graph_from_adjacency_matrix(cor, mode='undirected')
-    #cor.m <- melt(cor)
-    #network1 <- igraph::graph.data.frame(cor.m, directed=FALSE);
     #overlap of edges
-    #tmp.net <- (cor_g %s% ppi)
     el <- igraph::get.edgelist(ppi)
     rownames(el) <- paste(el[,1], el[,2], sep='_')
     keep <- intersect(rownames(cor.m), rownames(el))
     cor.m2 <- cor.m[keep,]
-    #cor.m2 <- cor.m2[which(cor.m2$value > 0),]
-    #cor.m2 <- cor.m2[which(cor.m2$correlation > 0),]
     cor.m2 <- cor.m2[which(cor.m2$correlation > corThr2),]
-    network <- igraph::graph.data.frame(cor.m2, directed=FALSE);
-    igraph::E(network)$weight  <- as.vector(cor.m2$correlation)
-    network <- igraph::simplify(network, remove.multiple = TRUE,
-                                remove.loops = TRUE)
-    edges <- as.data.frame(igraph::get.edgelist(network))
-    edges$weight <- abs(igraph::E(network)$weight)
-    edges$corr <- igraph::E(network)$weight
-    celltype <- gsub(" ", ".", celltype)
-    filename <- paste(dir.prefix, celltype, '.txt',sep='')
-    write.table(edges, file=filename, sep='\t', row.names=FALSE,
-                col.names = FALSE, quote=FALSE) #input network
-    gc()
-    corTables[[celltype]] <- network
-    gc(verbose=TRUE)
+    if (nrow(cor.m2) == 0) {
+        print(paste0("No correlation found for ", celltype, " cell type."))
+        gc()
+    }
+    else {
+        network <- igraph::graph.data.frame(cor.m2, directed=FALSE);
+        igraph::E(network)$weight  <- as.vector(cor.m2$correlation)
+        network <- igraph::simplify(network, remove.multiple = TRUE,
+                                    remove.loops = TRUE)
+        edges <- as.data.frame(igraph::get.edgelist(network))
+        edges$weight <- abs(igraph::E(network)$weight)
+        edges$corr <- igraph::E(network)$weight
+        celltype <- gsub(" ", ".", celltype)
+        filename <- paste(dir.prefix, celltype, '.txt',sep='')
+        write.table(edges, file=filename, sep='\t', row.names=FALSE,
+                    col.names = FALSE, quote=FALSE) #input network
+        gc()
+        corTables[[celltype]] <- network
+        gc(verbose=TRUE)
+    }
   }
   return(corTables)
 }
