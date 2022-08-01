@@ -68,7 +68,7 @@ read10X <- function(matrix_dir){
   barcode.names=read.delim(barcode.path,
                            header=FALSE,
                            stringsAsFactors=FALSE)
-  rownames(matrix)=barcode.names$V1
+  rownames(matrix)=gsub('-','.',barcode.names$V1) #rownames(matrix)=barcode.names$V1
   colnames(matrix)=make.unique(feature.names$V2)
   # The matrix had to be transposed to have spots as columns and genes as rows,
   # the default format of cellrouter for expression data.
@@ -152,6 +152,7 @@ setMethod("read10XImage",
               bcs[[i]]$tissue <- as.factor(bcs[[i]]$tissue)
               bcs[[i]]$height <- height$height[i]
               bcs[[i]]$width <- width$width[i]
+              bcs[[i]]$barcode =  gsub('-','.',bcs[[i]]$barcode) #!
               rownames(bcs[[i]]) <- bcs[[i]]$barcode
             }
             names(bcs) <- sample_names
