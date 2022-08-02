@@ -7,6 +7,7 @@
 #' @param assay.type character; the type of data to use.
 #' @param genelist character vector; genes to use in the analysis.
 #' @param nPerm numeric; the number of permutations.
+#' @param nCores numeric; the number of cores.
 #' @param interactions the interactions as calculated by the
 #' population.pairing function or the calculateObservedMean function.
 #' @param cluster.label character; column in the metadata table
@@ -17,10 +18,12 @@
 #'
 #' @export
 clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
-                               nPerm, interactions, cluster.label){
+                               nPerm, interactions, cluster.label, nCores=4){
+  cl <- parallel::makeCluster(nCores) 
+  doParallel::registerDoParallel(cl) 
   pcellrouter <- cellrouter
   mean.pairs <- list()
-  for(j in 1:nPerm){
+  mean.pairs <- foreach (j = 1:nPerm) %dopar% { #for(j in 1:nPerm){
     cat(j, '______________________________\n')
     pclusters <- as.vector(slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[cluster.label]])
     pclusters <- pclusters[sample(length(pclusters))]
@@ -48,6 +51,9 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
     #  save(interactions2, file=paste('permutations/permutation_number',j,sep='_'))
     #}
   }
+  name <- foreach (j = 1:nPerm, .combine='c')  %do% {paste('perm',j,sep='')} 
+  names(mean.pairs) = name; 
+  parallel::stopCluster(cl) 
   return(mean.pairs)
 }
 
@@ -61,6 +67,7 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
 #' @param assay.type character; the type of data to use.
 #' @param genelist character vector; genes to use in the analysis.
 #' @param nPerm numeric; the number of permutations.
+#' @param nCores numeric; the number of cores.
 #' @param interactions the interactions as calculated by the
 #' population.pairing function or the calculateObservedMean function.
 #' @param cluster.label character; column in the metadata table
@@ -76,7 +83,9 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
 clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
                                          nPerm, interactions, cluster.label,
                                          subcluster.column='Subpopulation',
-                                         clusters){
+                                         clusters, nCores=4){
+  cl <- parallel::makeCluster(nCores) 
+  doParallel::registerDoParallel(cl) 
   pcellrouter <- cellrouter
   sampTab <- slot(pcellrouter, 'assays')[[assay.type]]@sampTab[
     slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[cluster.label]] %in% clusters, ]
@@ -84,7 +93,7 @@ clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
   slot(pcellrouter, 'assays')[[assay.type]]@sampTab <- sampTab
   slot(pcellrouter, 'assays')[[assay.type]]@ndata <- expDat
   mean.pairs <- list()
-  for(j in 1:nPerm){
+  mean.pairs <- foreach (j = 1:nPerm) %dopar% { #for(j in 1:nPerm){
     cat(j, '______________________________\n')
     pclusters <- as.vector(slot(pcellrouter, 'assays')[[assay.type]]@sampTab[[subcluster.column]])
     pclusters <- pclusters[sample(length(pclusters))]
@@ -116,5 +125,8 @@ clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
     #  save(interactions2, file=paste('permutations/permutation_number',j,sep='_'))
     #}
   }
+  name <- foreach (j = 1:nPerm, .combine='c')  %do% {paste('perm',j,sep='')} 
+  names(mean.pairs) = name; 
+  parallel::stopCluster(cl) 
   return(mean.pairs)
 }
