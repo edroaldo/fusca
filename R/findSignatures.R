@@ -13,6 +13,7 @@
 #' @param fc.threshold numerical; fold change threshold.
 #' @param fc.tm logical; whether to include fold change values in the
 #' template-matching differential expression analysis.
+#' @param nCores numeric; the number of cores. 
 #'
 #' @return data frame; the population, fold change (fc), mean p, mean np,
 #' p-value, p-value adjusted, and gene.
@@ -21,11 +22,11 @@
 findSignatures <- function(object, assay.type='RNA',
                            column='population', test.use='wilcox',
                            pos.only=TRUE, min.pct=0.1, fc.threshold=0.25,
-                           fc.tm=FALSE){
+                           fc.tm=FALSE, nCores=1){ #!
   if(test.use == 'wilcox'){
     cat('Calculating fold changes...', '\n')
     object <- computeFC(object, assay.type, column=column, min.pct=min.pct,
-                        pos.only=pos.only, fc.threshold=fc.threshold)
+                        pos.only=pos.only, fc.threshold=fc.threshold, nCores=1) #!
     if (length(object@signatures) == 0){
       print('No population statisfies the selected fc.threshold.')
       markers <- NULL
@@ -44,7 +45,7 @@ findSignatures <- function(object, assay.type='RNA',
     rownames(markers) <- as.vector(markers$gene)
     # Add fold changes to template method.
     if(fc.tm){
-      object <- computeFC(object, assay.type, column, pos.only, fc.threshold)
+      object <- computeFC(object, assay.type, column, pos.only, fc.threshold, nCores=1) #!
       for(signature in names(object@signatures)){
         markers[rownames(signatures[[signature]]), 'log2FC'] <- object@signatures[[signature]][rownames(signatures[[signature]]), 'fc']
         markers[rownames(signatures[[signature]]), 'log2FC_pval'] <- object@signatures[[signature]][rownames(signatures[[signature]]), 'pv']
@@ -69,6 +70,7 @@ findSignatures <- function(object, assay.type='RNA',
 #' @param pos.only logical; only uses genes upregulated.
 #' @param min.pct numeric; minimum percentage.
 #' @param fc.threshold numerical; fold change threshold.
+#' @param nCores numeric; the number of cores. 
 #'
 #' @return CellRouter object with the signatures slot updated. This slot
 #' contains a list with a dataframe for each group containing information about
@@ -79,20 +81,22 @@ findSignatures <- function(object, assay.type='RNA',
 #' @rdname computeFC-methods
 setGeneric("computeFC", function(object, assay.type='RNA',
                                  column='population', pos.only=TRUE,
-                                 min.pct=0.1, fc.threshold=0.25)
+                                 min.pct=0.1, fc.threshold=0.25, nCores=1) #!
   standardGeneric("computeFC"))
 #' @rdname computeFC-methods
 #' @aliases computeFC
 setMethod("computeFC",
           signature="CellRouter",
           definition=function(object, assay.type,
-                                column, pos.only, min.pct, fc.threshold){
+                                column, pos.only, min.pct, fc.threshold, nCores=1){ #!
+            cl <- parallel::makeCluster(nCores) #!
+            doParallel::registerDoParallel(cl) #!
             print('Identify cluster-specific gene signatures')
             expDat <- slot(object, 'assays')[[assay.type]]@ndata
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.data.frame(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
             diffs <- list()
-            for(i in unique(membs)){
+            diffs <- foreach (i = unique(membs)) %dopar% { # for(i in unique(membs)){ #!
               cat('cluster ', i, '\n')
               if(sum(membs == i) == 0) next
               n_indexes <- membs_df[which(membs_df[[column]] == i), 'sample_id']
@@ -139,7 +143,9 @@ setMethod("computeFC",
                 print('No genes passed fold change threshold')
               }
             }
+            names(diffs) = unique(membs); #!
             object@signatures <- diffs
+            parallel::stopCluster(cl) #!
             return(object)
           }
 )
