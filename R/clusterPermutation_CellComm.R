@@ -18,7 +18,7 @@
 #'
 #' @export
 clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
-                               nPerm, interactions, cluster.label, nCores=4){
+                               nPerm, interactions, cluster.label, nCores=1){
   cl <- parallel::makeCluster(nCores) 
   doParallel::registerDoParallel(cl) 
   pcellrouter <- cellrouter
@@ -83,7 +83,7 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
 clusterPermutationSubcluster <- function(cellrouter, assay.type='RNA', genelist,
                                          nPerm, interactions, cluster.label,
                                          subcluster.column='Subpopulation',
-                                         clusters, nCores=4){
+                                         clusters, nCores=1){
   cl <- parallel::makeCluster(nCores) 
   doParallel::registerDoParallel(cl) 
   pcellrouter <- cellrouter
