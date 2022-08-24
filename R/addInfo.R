@@ -51,7 +51,7 @@ addInfo <- function(object, assay.type='RNA', sample.name='Sample1',
   #colors_row <- rep(colors, times=replicate_row)
   colors_row = c();for (i in sampTab[[colname]]){ colors_row = rbind(colors_row, colors[names(colors) == i])} #!
   color.column <- paste(colname, 'color', sep='_')
-  sampTab[, color.column] <- colors_row
+  sampTab[, color.column] <- as.character(colors_row)
   slot(object, 'assays')[[assay.type]]@sampTab <- sampTab
   # Add information to the barcodes dataframe for plotting.
   if (assay.type=='ST'){
