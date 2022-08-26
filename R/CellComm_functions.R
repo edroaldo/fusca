@@ -49,19 +49,25 @@ predictCellInteractions <- function(object, assay.type='RNA',
   # library(grid)
   ligand.receptor <- calculateLigandReceptor(graph = graph)
   ligand.receptor <- rescale(as.matrix(ligand.receptor), c(0,1))
-  distances <- slot(object, 'assays')[[assay.type]]@image$distances[[cluster.type]][[sample.name]]
-  distances <- distances[rownames(ligand.receptor), colnames(ligand.receptor)]
-  distances <- rescale(distances, c(0,1))
-  distances[which(distances > distance.threshold)] <- 1
-  proximity.matrix <- 1 - distances
-  interaction.score <- ligand.receptor * proximity.matrix
-  distance <- pheatmap::pheatmap(proximity.matrix, border_color = "white",
+  if(assay.type == "ST"){#!
+    distances <- slot(object, 'assays')[[assay.type]]@image$distances[[cluster.type]][[sample.name]]
+    distances <- distances[rownames(ligand.receptor), colnames(ligand.receptor)]
+    distances <- rescale(distances, c(0,1))
+    distances[which(distances > distance.threshold)] <- 1
+    proximity.matrix <- 1 - distances
+    interaction.score <- ligand.receptor * proximity.matrix
+    distance <- pheatmap::pheatmap(proximity.matrix, border_color = "white",
                                  main="Cluster Centroid Spatial Distance",
                                  silent = T)
-  score <- pheatmap::pheatmap(interaction.score, border_color = "white",
+    score <- pheatmap::pheatmap(interaction.score, border_color = "white",
                               main="Interaction Score", silent = T)
-  lr <- pheatmap::pheatmap(ligand.receptor, border_color = "white",
+    lr <- pheatmap::pheatmap(ligand.receptor, border_color = "white",
                            main="Ligand-Receptor interactions", silent = T)
-  plots <- list(LR=lr$gtable, distance=distance$gtable, score=score$gtable)
+    plots <- list(LR=lr$gtable, distance=distance$gtable, score=score$gtable)
+  } else { #!
+    lr <- pheatmap::pheatmap(ligand.receptor, border_color = "white",
+                             main="Ligand-Receptor interactions", silent = T)
+    plots <- list(LR=lr$gtable)
+  }
   return(plots)
 }
