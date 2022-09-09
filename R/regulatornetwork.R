@@ -14,7 +14,7 @@
 #'
 #' @export
 regulatornetwork <- function(object, x, ggrn, genelist){
-  browser()
+  #browser()
   nets <- list()
   nets2 <- list()
   for(t in names(x)){
