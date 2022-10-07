@@ -34,6 +34,7 @@ setMethod("findpaths.simpleRJava",
           signature="CellComm",
           definition = function(object, sources.targets, file, dir, maindir){
             curdir <- getwd()
+            dir1 = dir #!
             print(file)
             print(maindir)
             dir.create(file.path(maindir, dir), showWarnings = FALSE)
@@ -127,11 +128,11 @@ setMethod("findpaths.simpleRJava",
                                   'FlowNetwork_all_paths_subnet.gml',
                                   format = 'gml');
             } else {
-              cat('No cells in the path', dir,'. The gaph was not created.\n')
+              cat('No cells in the path', dir1,'. The gaph was not created.\n') #!
             }
 
             # Change directory back to the original one.
-            setwd(file.path(curdir))
+            setwd(file.path(maindir)) #!
             #object@directory <- dirs
             return(object)
           }
