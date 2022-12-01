@@ -32,17 +32,25 @@ clusterPermutation <- function(cellrouter, assay.type='RNA', genelist,
                               fun='mean')
     # interactions <- population.pairing(mean.expr = mean.expr, ligands=ligands,
     #                                    receptors=receptors, threshold = 0.25, pairs.m)
-    interactions2 <- interactions
-    interactions2$mean.ligand <- 0
-    interactions2$mean.receptor <- 0
-    for(i in 1:nrow(interactions2)){
-      c1 <- as.vector(interactions2[i, 'celltype1'])
-      c2 <- as.vector(interactions2[i, 'celltype2'])
-      l <- as.vector(interactions2[i, 'ligand'])
-      r <- as.vector(interactions2[i, 'receptor'])
-      interactions2[i, 'mean.ligand'] <- mean.expr[[c1]][l, 'p']
-      interactions2[i, 'mean.receptor'] <- mean.expr[[c2]][r, 'p']
+    mean_expr_matrix <- matrix(, nrow=length(mean.expr), ncol=length(genelist),
+                               dimnames=list(names(mean.expr), genelist))
+    # For each cell type, add the mean gene expression values to the matrix
+    for(i in c(1:length(mean.expr))) {
+      mean_expr_matrix[i, ] <- mean.expr[i][[names(mean.expr[i])]][[2]]
     }
+    # interactions <- population.pairing(mean.expr = mean.expr, ligands=ligands,
+    #                                    receptors=receptors, threshold = 0.25, pairs.m)
+    interactions2 <- interactions
+    interactions2$mean.ligand <- c(1:nrow(interactions2))
+    interactions2$mean.receptor <- c(1:nrow(interactions2))
+    fun_apply_ligand <- function(x) {
+      mean_expr_matrix[interactions2[x, "celltype1"], interactions2[x, "ligand"]]
+    }
+    fun_apply_receptor <- function(x) {
+      mean_expr_matrix[interactions2[x, "celltype2"], interactions2[x, "receptor"]]
+    }
+    interactions2[, "mean.ligand"] <- sapply(interactions2[,"mean.ligand"],fun_apply_ligand)
+    interactions2[, 'mean.receptor'] <- sapply(interactions2[,"mean.receptor"], fun_apply_receptor)
     interactions2$mean <- as.numeric(interactions2$mean.ligand +
                                        as.numeric(interactions2$mean.receptor)) / 2
     #rownames(interactions2) <- as.vector(interactions2$pair)
