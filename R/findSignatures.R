@@ -13,7 +13,8 @@
 #' @param fc.threshold numerical; fold change threshold.
 #' @param fc.tm logical; whether to include fold change values in the
 #' template-matching differential expression analysis.
-#' @param nCores numeric; the number of cores. 
+#' @param nCores numeric; the number of cores.
+#' @param max.cells numeric; maximum number of cells per cluster (for large clusters)
 #'
 #' @return data frame; the population, fold change (fc), mean p, mean np,
 #' p-value, p-value adjusted, and gene.
@@ -22,11 +23,11 @@
 findSignatures <- function(object, assay.type='RNA',
                            column='population', test.use='wilcox',
                            pos.only=TRUE, min.pct=0.1, fc.threshold=0.25,
-                           fc.tm=FALSE, nCores=1){ #!
+                           fc.tm=FALSE, nCores=1, max.cells=Inf){ #!
   if(test.use == 'wilcox'){
     cat('Calculating fold changes...', '\n')
     object <- computeFC(object, assay.type, column=column, min.pct=min.pct,
-                        pos.only=pos.only, fc.threshold=fc.threshold, nCores=nCores) #!
+                        pos.only=pos.only, fc.threshold=fc.threshold, nCores=nCores, max.cells=max.cells) #!
     if (length(object@signatures) == 0){
       print('No population statisfies the selected fc.threshold.')
       markers <- NULL
@@ -71,6 +72,7 @@ findSignatures <- function(object, assay.type='RNA',
 #' @param min.pct numeric; minimum percentage.
 #' @param fc.threshold numerical; fold change threshold.
 #' @param nCores numeric; the number of cores. 
+#' @param max.cells numeric; maximum number of cells per cluster (for large clusters)
 #'
 #' @return CellRouter object with the signatures slot updated. This slot
 #' contains a list with a dataframe for each group containing information about
@@ -81,18 +83,31 @@ findSignatures <- function(object, assay.type='RNA',
 #' @rdname computeFC-methods
 setGeneric("computeFC", function(object, assay.type='RNA',
                                  column='population', pos.only=TRUE,
-                                 min.pct=0.1, fc.threshold=0.25, nCores=1) #!
+                                 min.pct=0.1, fc.threshold=0.25, nCores=1, max.cells=Inf) #!
   standardGeneric("computeFC"))
 #' @rdname computeFC-methods
 #' @aliases computeFC
 setMethod("computeFC",
           signature="CellRouter",
           definition=function(object, assay.type,
-                                column, pos.only, min.pct, fc.threshold, nCores){ #!
+                                column, pos.only, min.pct, fc.threshold, nCores, max.cells){ #!
             print('Identify cluster-specific gene signatures')
             expDat <- slot(object, 'assays')[[assay.type]]@ndata
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.data.frame(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
+            samptab = slot(object, 'assays')[[assay.type]]@sampTab 
+            if (max.cells < Inf) {
+              set.seed(42); membs_df = data.frame(); subSamp = data.frame();
+              for (i in unique(membs)){ #if(sum(membs == i) == 0) next
+                submembs_df = data.frame();
+                if (length(samptab[[column]][samptab[[column]] == i]) > max.cells) {
+                  submembs_df <- sample_n(samptab[samptab[[column]] == i,], max.cells)
+                } else {submembs_df <- samptab[samptab[[column]] == i,]}
+                subSamp = rbind(subSamp, submembs_df)
+              }
+              membs_df = as.data.frame(subSamp[ , c('sample_id', column), drop=FALSE])
+              membs <- as.vector(subSamp[[column]])
+            }
             diffs <- list()
             cl <- parallel::makeCluster(nCores, outfile = "") #!
             doParallel::registerDoParallel(cl) #!
