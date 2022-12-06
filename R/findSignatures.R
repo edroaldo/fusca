@@ -26,7 +26,7 @@ findSignatures <- function(object, assay.type='RNA',
   if(test.use == 'wilcox'){
     cat('Calculating fold changes...', '\n')
     object <- computeFC(object, assay.type, column=column, min.pct=min.pct,
-                        pos.only=pos.only, fc.threshold=fc.threshold, nCores=1) #!
+                        pos.only=pos.only, fc.threshold=fc.threshold, nCores=nCores) #!
     if (length(object@signatures) == 0){
       print('No population statisfies the selected fc.threshold.')
       markers <- NULL
@@ -45,7 +45,7 @@ findSignatures <- function(object, assay.type='RNA',
     rownames(markers) <- as.vector(markers$gene)
     # Add fold changes to template method.
     if(fc.tm){
-      object <- computeFC(object, assay.type, column, pos.only, fc.threshold, nCores=1) #!
+      object <- computeFC(object, assay.type, column, pos.only, fc.threshold, nCores) #!
       for(signature in names(object@signatures)){
         markers[rownames(signatures[[signature]]), 'log2FC'] <- object@signatures[[signature]][rownames(signatures[[signature]]), 'fc']
         markers[rownames(signatures[[signature]]), 'log2FC_pval'] <- object@signatures[[signature]][rownames(signatures[[signature]]), 'pv']
@@ -88,15 +88,15 @@ setGeneric("computeFC", function(object, assay.type='RNA',
 setMethod("computeFC",
           signature="CellRouter",
           definition=function(object, assay.type,
-                                column, pos.only, min.pct, fc.threshold, nCores=1){ #!
-            cl <- parallel::makeCluster(nCores) #!
-            doParallel::registerDoParallel(cl) #!
+                                column, pos.only, min.pct, fc.threshold, nCores){ #!
             print('Identify cluster-specific gene signatures')
             expDat <- slot(object, 'assays')[[assay.type]]@ndata
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.data.frame(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
             diffs <- list()
-            diffs <- foreach (i = unique(membs)) %dopar% { # for(i in unique(membs)){ #!
+            cl <- parallel::makeCluster(nCores, outfile = "") #!
+            doParallel::registerDoParallel(cl) #!
+            diffs <- foreach (i = unique(membs), .packages = c("fusca", "Matrix")) %dopar% { # for(i in unique(membs)){ #!
               cat('cluster ', i, '\n')
               if(sum(membs == i) == 0) next
               n_indexes <- membs_df[which(membs_df[[column]] == i), 'sample_id']
@@ -124,7 +124,7 @@ setMethod("computeFC",
               if(length(genes.use) != 0){
                 m <- m[genes.use]
                 n <- n[genes.use]
-                print(length(genes.use))
+                #print(length(genes.use))
                 coldata <- slot(object, 'assays')[[assay.type]]@sampTab
                 coldata[n_indexes, "group"] <- "Group1"
                 coldata[m_indexes, "group"] <- "Group2"
