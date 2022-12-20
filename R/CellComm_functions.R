@@ -67,7 +67,7 @@ predictCellInteractions <- function(object, assay.type='RNA',
   } else { #!
     lr <- pheatmap::pheatmap(ligand.receptor, border_color = "white",
                              main="Ligand-Receptor interactions", silent = T)
-    plots <- list(LR=lr$gtable)
+    plots <- lr
   }
   return(plots)
 }
