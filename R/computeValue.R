@@ -17,17 +17,30 @@
 #' @docType methods
 #' @rdname computeValue-methods
 setGeneric("computeValue", function(object, assay.type='RNA',
-                                    genelist, column='population', fun='max')
+                                    genelist, column='population', fun='max', max.cells=Inf)
   standardGeneric("computeValue"))
 #' @rdname computeValue-methods
 #' @aliases computeValue
 setMethod("computeValue",
           signature = "CellRouter",
-          definition = function(object, assay.type, genelist, column, fun){
+          definition = function(object, assay.type, genelist, column, fun, max.cells){
             print('discovering subpopulation-specific gene signatures')
             expDat <- slot(object, 'assays')[[assay.type]]@ndata[genelist,]
             membs <- as.vector(slot(object, 'assays')[[assay.type]]@sampTab[[column]])
             membs_df <- as.data.frame(slot(object, 'assays')[[assay.type]]@sampTab[ , c('sample_id', column), drop=FALSE])
+            samptab = slot(object, 'assays')[[assay.type]]@sampTab 
+            if (max.cells < Inf) {
+              set.seed(42); membs_df = data.frame(); subSamp = data.frame();
+              for (i in unique(membs)){ #if(sum(membs == i) == 0) next
+                submembs_df = data.frame();
+                if (length(samptab[[column]][samptab[[column]] == i]) > max.cells) {
+                  submembs_df <- sample_n(samptab[samptab[[column]] == i,], max.cells)
+                } else {submembs_df <- samptab[samptab[[column]] == i,]}
+                subSamp = rbind(subSamp, submembs_df)
+              }
+              membs_df = as.data.frame(subSamp[ , c('sample_id', column), drop=FALSE])
+              membs <- as.vector(subSamp[[column]])
+            }
             diffs <- list()
             for(i in unique(membs)){
               cat('cluster ', i, '\n')
