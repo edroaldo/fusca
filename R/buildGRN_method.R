@@ -11,6 +11,7 @@
 #' interactions.
 #' @param blocksize numeric; size of the blocks in which genes will be scaled.
 #' @param filename character; filename where the GRN data will be saved.
+#' @param max.cells numeric; maximum number of cells
 #'
 #' @return list; the GNR with the gene regulatory network graph, the GRN_table
 #' with the gene regulatory network table, and the the tfs with the transcription
@@ -21,7 +22,7 @@
 #' @rdname buildGRN-methods
 setGeneric("buildGRN", function(object, assay.type='RNA',
                                 species, genes.use = NULL, zscore = 5,
-                                blocksize = 500, filename='GRN.R')
+                                blocksize = 500, filename='GRN.R', max.cells = Inf)
   standardGeneric("buildGRN"))
 #' @rdname buildGRN-methods
 #' @aliases buildGRN
@@ -29,16 +30,21 @@ setMethod("buildGRN",
           signature = "CellRouter",
           definition = function(object, assay.type,
                                 species = c('Hs', 'Mm'), genes.use,
-                                zscore = 5, blocksize, filename='GRN.R'){
+                                zscore = 5, blocksize, filename='GRN.R', max.cells){
             species <- match.arg(species)
             if(is.null(genes.use)){
               genes.use <- rownames(slot(object, 'assays')[[assay.type]]@ndata)
             }
             # Trancription factors.
             tfs <- find_tfs(species = species)
+            #Subsample
+            if (max.cells < Inf) {
+              expDat <- slot(object, 'assays')[[assay.type]]@ndata[genes.use, sample(ncol(slot(object, 'assays')[[assay.type]]@ndata), size = max.cells), drop=FALSE]
+            } else {
+              expDat <- slot(object, 'assays')[[assay.type]]@ndata[genes.use, , drop=FALSE]
+            }
             # Gene regulated network.
-            grn <- globalGRN(slot(object, 'assays')[[assay.type]]@ndata[genes.use, , drop=FALSE],
-                             tfs, zscore, blocksize)
+            grn <- globalGRN(expDat,tfs, zscore, blocksize)
             colnames(grn)[1:2]<-c("TG", "TF");
             ggrn <- ig_tabToIgraph(grn, simplify = TRUE)
             x <- list(GRN = ggrn, GRN_table = grn, tfs = tfs)
