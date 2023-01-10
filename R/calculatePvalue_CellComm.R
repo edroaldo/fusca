@@ -29,23 +29,19 @@ calculatePvalue <- function(p, nPerm=100, interactions2){
   tmp <- list()
   tmp2 <- list()
   #pvalue <- list()
-  for(pair in names(pcc)){
-    pair.observed <- interactions2[which(interactions2$split == pair), ]
-    pair.mean.observed <- interactions2[which(interactions2$split == pair), 'mean']
-    num.higher <- pcc[[pair]][which(pcc[[pair]]$mean >= pair.mean.observed), ]
-    #num.higher$pvalue <- nrow(num.higher)/nrow(pcc[[pair]])
-    #pvalue[[pair]] <- nrow(num.higher)/nrow(pcc[[pair]])
-    #num.higher$pvalue <- nrow(num.higher)/nrow(pcc[[pair]])
-    #tmp[[pair]] <- num.higher
-    #
-    # duvida: Em vez de colocar o nPerm podia pegar a length de p direto?
-    #
-    pair.observed$pvalue <- (1+nrow(num.higher))/(1+nPerm)
-    #b <- binconf(nrow(num.higher), nPerm,method="exact")
-    #pair.observed$pvalue2 <- b[1]
-    tmp2[[pair]] <- pair.observed
+  for(pair in names(pcc)) {
+    tmp2[[pair]] <- pair
   }
-
+  
+  fun_apply <- function(x) {
+    pair.observed <- interactions2[which(interactions2$split == x), ]
+    pair.mean.observed <- interactions2[which(interactions2$split == x), 'mean']
+    num.higher <- pcc[[x]][which(pcc[[x]]$mean >= pair.mean.observed), ]
+    pair.observed$pvalue <- (1+nrow(num.higher))/(1+nPerm)
+    pair.observed
+  }
+  
+  tmp2 <- lapply(tmp2, fun_apply)
   tmp3 <- do.call(rbind, tmp2)
   tmp3 <- tmp3[order(tmp3$pvalue),]
 
