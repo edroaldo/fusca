@@ -137,6 +137,7 @@ Collate:
     'smoothDynamics_method.R'
     'sourcestargets_CellComm.R'
     'spatial_transcriptomics.R'
+    'subsetCells.R'
     'summarize.flow_CellComm.R'
     'topGenes_method.R'
     'utils-pipe.R'
