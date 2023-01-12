@@ -15,6 +15,10 @@
 #' @param num.pcs numeric; number of principal components that will define the
 #' space from where the kNN graph is identified. For example, if num.pcs = 10,
 #' the kNN graph will be created from a 10-dimensional PCA space.
+#' @param nn.type character; method to find the k-nearest neighbor graph. If
+#' 'nng', the code will use the nng function of the cccd package. If 'knn' or
+#' 'snn', it will use the functions from the bluster package, which are
+#' recommended for big data due to their efficiency.
 #' @param sim.type character; updates the kNN graph to encode cell-cell
 #' similarities using the jaccard or invlog methods.
 #' @param filename character; name of gml file containing the kNN graph.
@@ -26,7 +30,7 @@
 #' @rdname buildKNN-methods
 setGeneric("buildKNN", function(object, assay.type='RNA',
                                 k = 5, column.ann, num.pcs = 20,
-                                sim.type = "jaccard",
+                                sim.type = "jaccard", nn.type = "knn", 
                                 filename = "graph_clusters.gml")
   standardGeneric("buildKNN"))
 #' @rdname buildKNN-methods
@@ -34,7 +38,7 @@ setGeneric("buildKNN", function(object, assay.type='RNA',
 setMethod("buildKNN",
           signature = "CellRouter",
           definition = function(object, assay.type,
-                                k, column.ann,  num.pcs, sim.type,
+                                k, column.ann,  num.pcs, sim.type, nn.type,
                                 filename){
             # Build a k-nn graph and create a matrix of similarities for the
             # k-nn cells.
@@ -42,8 +46,16 @@ setMethod("buildKNN",
             sampTab <- slot(object, 'assays')[[assay.type]]@sampTab
             smapTab <- sampTab[order(sampTab[[column.ann]]),]
             print('building k-nearest neighbors graph')
-            dm <- as.matrix(proxy::dist(matrix))
-            h <- cccd::nng(dx = dm, k = k)
+            if (nn.type == 'knn'){
+              h <- bluster::makeKNNGraph(x = matrix, k = k, directed = TRUE,
+                                         BPPARAM = BiocParallel::MulticoreParam())
+            } else if(nn.type == 'snn') {
+              h <- bluster::makeSNNGraph(x = matrix, k = k, type="jaccard",
+                                         BPPARAM = BiocParallel::MulticoreParam())
+            } else {
+              dm <- as.matrix(proxy::dist(matrix))
+              h <- cccd::nng(dx = dm, k = k)
+            }
             if(sim.type == 'jaccard'){
               sim <- as(object = igraph::similarity.jaccard(h,
                                                             vids = igraph::V(h),
