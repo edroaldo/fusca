@@ -12,16 +12,7 @@
 #' @return ggplot2 graph.
 #'
 #' @export
-#' @docType methods
-#' @rdname plotGenesInClusters-methods
-setGeneric("plotGenesInClusters", function(assay.type='RNA', rankedDynamics,
-                                           traj.name, num.genes)
-  standardGeneric("plotGenesInClusters"))
-#' @rdname plotGenesInClusters-methods
-#' @aliases plotGenesInClusters
-setMethod("plotGenesInClusters",
-          signature="list",
-          definition=function(assay.type, rankedDynamics, traj.name,
+plotGenesInClusters <- function(assay.type, rankedDynamics, traj.name,
                               num.genes){
 
             trajectory <- rankedDynamics[[traj.name]]
