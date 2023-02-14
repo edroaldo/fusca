@@ -39,4 +39,3 @@ plotGenesInClusters <- function(assay.type, rankedDynamics, traj.name,
             }
             return(traj.plots)
           }
-)
